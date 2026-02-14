@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Our Long-Distance Valentine 💖</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+html, body {
+  margin:0; padding:0;
+  width:100%; height:100%;
+  background:#ffc0cb;
+  font-family:'Playfair Display', serif;
+  overflow:hidden;
+  cursor:pointer;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:#8B0000;
+  position:relative;
+}
+
+/* Love meter */
+#loveMeterContainer {
+  position:absolute;
+  top:0; left:0;
+  width:100%;
+  height:8px;
+  background:#ffb6c1;
+  z-index:5;
+}
+#loveMeter {
+  width:0%;
+  height:100%;
+  background:#8B0000;
+  transition:width 0.3s ease;
+}
+
+/* Letterbox bars */
+#topBar, #bottomBar {
+  position:absolute;
+  width:100%;
+  height:12%;
+  background:#ffc0cb;
+  z-index:1;
+  transition: transform 0.5s ease;
+}
+
+/* Story container */
+#storyContainer {
+  text-align:center;
+  padding:20px;
+  width:90%;
+  z-index:2;
+  position:relative;
+}
+
+/* Responsive text */
+#sceneText { font-size:2em; }
+@media(max-width:768px){ #sceneText { font-size:1.6em; } }
+@media(max-width:480px){ #sceneText { font-size:1.2em; } }
+
+/* Sticker/emoji styling */
+.sticker {
+  display:inline-block;
+  font-size:1.5em; 
+  margin-left:5px;
+  opacity:0;
+  animation:pop 0.6s forwards;
+  cursor:pointer;
+}
+@keyframes pop {
+  0%{transform:scale(0); opacity:0;}
+  50%{transform:scale(1.2); opacity:1;}
+  100%{transform:scale(1); opacity:1;}
+}
+
+/* Heart trails */
+.heart-trail {
+  position:absolute;
+  font-size:1.2em;
+  pointer-events:none;
+  animation:flyUpTrail 2s forwards;
+}
+@keyframes flyUpTrail {
+  0% {opacity:1; transform:translateY(0) scale(1);}
+  100% {opacity:0; transform:translateY(-250px) scale(1.5);}
+}
+
+/* Heartburst finale */
+#heartburst {
+  position:absolute;
+  width:100%;
+  height:100%;
+  top:0; left:0;
+  pointer-events:none;
+  z-index:3;
+}
+.heart { position:absolute; font-size:2em; animation:flyUp 2s forwards; }
+@keyframes flyUp { 0%{opacity:1;transform:translateY(0) scale(1);} 100%{opacity:0;transform:translateY(-400px) scale(1.5);} }
+
+/* Sparkle particles */
+.particle {
+  position:absolute; font-size:1.2em; color:#fff; opacity:0;
+  animation:particleMove 1s forwards;
+}
+@keyframes particleMove {
+  0%{opacity:1; transform:translate(0,0) scale(0.5);}
+  100%{opacity:0; transform:translate(calc(-50px + 100px*var(--rand)), -150px) scale(1);}
+}
+
+/* Mini interactive surprises */
+.miniSurprise {
+  position:absolute;
+  font-size:1.5em;
+  pointer-events:none;
+  animation:pop 0.6s forwards;
+}
+</style>
+</head>
+<body>
+
+<div id="loveMeterContainer"><div id="loveMeter"></div></div>
+<div id="topBar"></div>
+<div id="bottomBar"></div>
+<div id="storyContainer"><div id="sceneText"></div></div>
+<div id="heartburst"></div>
+
+<script>
+const scenes = [
+  {lines:["Happy Valentine’s Day, THEJU! Today, I want to tell you a little story of us…"], sticker:'💖', surprise:true},
+  {lines:["12 days away… yet I feel you beside me"], sticker:null, surprise:true},
+  {lines:["Every sunrise reminds me of your laughter"], sticker:'🌅', surprise:false},
+  {lines:["Every night, your name echoes in my dreams"], sticker:'🌙', surprise:false},
+  {lines:["Distance stretched the hours… but not my love"], sticker:'❤️', surprise:true},
+  {lines:["I’ve counted moments, not days"], sticker:'⏳', surprise:false},
+  {lines:["The stars above seem to whisper your name"], sticker:'✨', surprise:false},
+  {lines:["12 days… until our worlds collide"], sticker:null, surprise:false},
+  {lines:["Until your hand finally finds mine"], sticker:'🤝', surprise:false},
+  {lines:["Until laughter, warmth, and all the little things return"], sticker:'🌸', surprise:false},
+  {lines:["THEJU… when you arrive, the world feels right again"], sticker:'🌎', surprise:false},
+  {lines:["Today is our day — let’s celebrate every moment"], sticker:'💝', surprise:true},
+  {lines:["Chocolate, flowers, and little surprises"], sticker:'🍫', surprise:false},
+  {lines:["Love travels faster than distance"], sticker:'💌', surprise:false},
+  {lines:["Click with me and let’s share our hearts together"], sticker:'❤️', surprise:true},
+  {lines:["THEJU, you are my everything"], sticker:'💖', surprise:false},
+  {lines:["And here comes our special Valentine’s surprise…"], sticker:'✨', surprise:true},
+  {lines:["The wait is over… our hearts unite, here and now"], sticker:null, surprise:false}
+];
+
+const storyContainer = document.getElementById('storyContainer');
+const sceneText = document.getElementById('sceneText');
+const heartburst = document.getElementById('heartburst');
+const topBar = document.getElementById('topBar');
+const bottomBar = document.getElementById('bottomBar');
+const loveMeter = document.getElementById('loveMeter');
+
+let sceneIndex=0, lineIndex=0, typing=false, finalClicked=false;
+let lovePoints=0, maxLove=20; 
+
+function typeLine(line, callback, sticker=null, surprise=false){
+  let i=0;
+  sceneText.innerHTML='';
+  sceneText.onclick = null;
+
+  function typeChar(){
+    if(i<line.length){
+      sceneText.innerHTML += line.charAt(i);
+      i++;
+      setTimeout(typeChar,40);
+    } else {
+      if(sticker){
+        const s=document.createElement('span');
+        s.classList.add('sticker');
+        s.textContent=sticker;
+        sceneText.appendChild(s);
+        s.onclick = addLovePoint;
+      }
+      if(surprise){
+        sceneText.style.cursor='pointer';
+        sceneText.onclick = function(){
+          sceneText.style.cursor='default';
+          const mini = document.createElement('div');
+          mini.classList.add('miniSurprise');
+          mini.textContent = '💖';
+          mini.style.left = Math.random()*window.innerWidth+'px';
+          mini.style.top = Math.random()*window.innerHeight+'px';
+          document.body.appendChild(mini);
+          setTimeout(()=>mini.remove(),1500);
+          addLovePoint();
+        }
+      }
+      setTimeout(callback,300);
+    }
+  }
+  typeChar();
+}
+
+function addLovePoint(){
+  lovePoints++;
+  let percent = Math.min((lovePoints/maxLove)*100,100);
+  loveMeter.style.width = percent + '%';
+  if(percent>=100 && !finalClicked){
+    triggerBonus();
+  }
+}
+
+function triggerBonus(){
+  finalClicked=true;
+  sceneText.innerHTML = "Your love meter is full 💖 THEJU, we are together!";
+  heartBurst();
+}
+
+function pulseBars(){
+  topBar.style.transform='translateY(-12%)';
+  bottomBar.style.transform='translateY(12%)';
+  setTimeout(()=>{topBar.style.transform='translateY(0)'; bottomBar.style.transform='translateY(0)';},500);
+}
+
+function heartBurst(){
+  for(let i=0;i<50;i++){
+    const heart=document.createElement('div');
+    heart.classList.add('heart');
+    heart.textContent='❤️';
+    heart.style.left=Math.random()*window.innerWidth+'px';
+    heart.style.top=window.innerHeight+'px';
+    heart.style.fontSize=(20+Math.random()*30)+'px';
+    heart.style.animationDuration=(1.5+Math.random()*1)+'s';
+    heartburst.appendChild(heart);
+    setTimeout(()=>heart.remove(),3000);
+  }
+  for(let i=0;i<30;i++){
+    const p=document.createElement('div');
+    p.classList.add('particle');
+    p.textContent='✨';
+    p.style.setProperty('--rand', Math.random());
+    p.style.left=(window.innerWidth/2-10 + (Math.random()*60-30))+'px';
+    p.style.top=(window.innerHeight/2-30 + (Math.random()*60-30))+'px';
+    storyContainer.appendChild(p);
+    setTimeout(()=>p.remove(),1000);
+  }
+}
+
+function heartTrail(x,y){
+  const h=document.createElement('div');
+  h.classList.add('heart-trail');
+  h.textContent='❤️';
+  h.style.left=(x-10)+'px';
+  h.style.top=(y-10)+'px';
+  document.body.appendChild(h);
+  setTimeout(()=>h.remove(),2000);
+}
+
+function nextStep(e){
+  if(e) heartTrail(e.clientX || e.touches?.[0].clientX, e.clientY || e.touches?.[0].clientY);
+  if(typing) return;
+
+  if(sceneIndex===scenes.length-1 && lineIndex>=scenes[sceneIndex].lines.length && !finalClicked){
+    finalClicked=true;
+    sceneText.innerHTML='';
+    pulseBars();
+    let message = "HAPPY VALENTINE'S DAY ❤️ I LOVE YOU";
+    let i=0;
+    function revealChar(){
+      if(i<message.length){
+        sceneText.innerHTML += message.charAt(i);
+        if(i%2===0){
+          heartTrail(Math.random()*window.innerWidth, Math.random()*window.innerHeight);
+        }
+        i++;
+        setTimeout(revealChar,50);
+      } else {
+        heartBurst();
+      }
+    }
+    revealChar();
+    return;
+  }
+
+  const currentScene=scenes[sceneIndex];
+  if(lineIndex<currentScene.lines.length){
+    typing=true;
+    pulseBars();
+    typeLine(currentScene.lines[lineIndex], ()=>{
+      typing=false;
+      lineIndex++;
+    }, currentScene.sticker, currentScene.surprise);
+  } else{
+    sceneIndex++;
+    lineIndex=0;
+    nextStep();
+  }
+}
+
+// Start first line
+typeLine(scenes[0].lines[0], ()=>{typing=false;}, scenes[0].sticker, scenes[0].surprise);
+lineIndex++;
+
+document.body.addEventListener('click', nextStep);
+document.body.addEventListener('touchstart', nextStep);
+</script>
+
+</body>
+</html>
